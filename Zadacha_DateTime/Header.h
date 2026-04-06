@@ -4,6 +4,16 @@
 #include <string>
 using namespace std;
 
+class DateTimeException : public exception {
+private:
+	string message;
+public:
+	DateTimeException(const string& msg) : message(msg) {}
+	const char* what() const noexcept override {
+		return message.c_str();
+	}
+};
+
 class DateTime {
 	int year;
 	int month;
