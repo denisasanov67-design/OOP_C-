@@ -1,4 +1,4 @@
-﻿#include "array.h"
+#include "array.h"
 #include <iostream>
 using namespace std;
 
@@ -59,8 +59,9 @@ int& Array::operator [](int index)
 
 int Array::operator [](int index)const {
 	if (index < 0 || index >= size) {
-		throw ArrayException(); 
+		throw ArrayException();
 	}
+	return ptr[index];
 }
 
 void Array::increaseCapacity(int newCapacity) {
@@ -106,7 +107,7 @@ void Array::remove(int index) {
 }
 
 void Array::insert(int elem) {
-	insert(elem, size); 
+	insert(elem, size);
 }
 
 int Array::getSize()const {
