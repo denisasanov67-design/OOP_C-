@@ -13,37 +13,37 @@ int main(void)
         for (int i = 0; i < 6; i++) {
             arr.insert(i + 1);
         }
-        cout << "Íà÷àëüíûé ìàññèâ:" << endl << arr << endl;
+        cout << "ÐÐ°Ñ‡Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼Ð°ÑÑÐ¸Ð²:" << endl << arr << endl;
 
 
 
         for (int i = 0; i < 8; i += 2) {
             arr.insert(10 + i, i);
         }
-        cout << "Ïîñëå âñòàâêè ÷åòíûõ ÷èñåë:" << endl << arr << endl;
+        cout << "ÐŸÐ¾ÑÐ»Ðµ Ð²ÑÑ‚Ð°Ð²ÐºÐ¸ Ñ‡ÐµÑ‚Ð½Ñ‹Ñ… Ñ‡Ð¸ÑÐµÐ»:" << endl << arr << endl;
 
 
         for (int i = 1; i < 8; i += 2) {
             arr[i] = 20 + i;
         }
-        cout << "Ïîñëå èçìåíåíèÿ ÷åðåç []:" << endl << arr << endl;
+        cout << "ÐŸÐ¾ÑÐ»Ðµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ Ñ‡ÐµÑ€ÐµÐ· []:" << endl << arr << endl;
 
 
         for (int i = 6; i >= 0; i -= 3) {
             arr.remove(i);
         }
-        cout << "Ïîñëå óäàëåíèÿ:" << endl << arr << endl;
+        cout << "ÐŸÐ¾ÑÐ»Ðµ ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ñ:" << endl << arr << endl;
 
 
         Array arrCopy = arr;
         Array arr2(2);
         arr2 = arr;
-        cout << "Êîïèÿ ìàññèâà:" << endl << arrCopy << endl;
+        cout << "ÐšÐ¾Ð¿Ð¸Ñ Ð¼Ð°ÑÑÐ¸Ð²Ð°:" << endl << arrCopy << endl;
         cout << arr[100] << endl;
 
     }
     catch (ArrayException& e) {
-        cerr << "Ïðîèçîøëà îøèáêà: âûõîä çà ãðàíèöû ìàññèâà!" << endl;
+        cerr << "ÐŸÑ€Ð¾Ð¸Ð·Ð¾ÑˆÐ»Ð° Ð¾ÑˆÐ¸Ð±ÐºÐ°: Ð²Ñ‹Ñ…Ð¾Ð´ Ð·Ð° Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñ‹ Ð¼Ð°ÑÑÐ¸Ð²Ð°!" << endl;
     }
 
     return 0;
@@ -69,20 +69,35 @@ int JosephProblem(int N, int k) {
     return arr[0];
 }
 
+
+int JosephProblemListWrapper(int N, int k) {
+    return JosephProblemLineList<int>(N, k);
+}
+
 int main(void)
 {
     setlocale(LC_ALL, "ru");
     int test[] = { 1000,5000,10000,50000,100000 };
     int size = sizeof(test) / sizeof(test[0]);
-
+    int k = 2;
+    cout << "Array" << endl;
     for (int i = 0; i < size; i++) {
         int N = test[i];
-        int k = 2;
         clock_t start = clock();
         int res = JosephProblem(N, k);
         clock_t end = clock();
         double time = double(end - start) / CLOCKS_PER_SEC;
-        cout << N << "\t\t" << res << "\t\t"<< time <<" ñåê." << endl;
+        cout << N << "\t\t" << res << "\t\t" << time << " ÑÐµÐº." << endl;
+    }
+
+    cout << "LineList" << endl;
+    for (int i = 0; i < size; i++) {
+        int N = test[i];
+        clock_t start = clock();
+        int res = JosephProblemListWrapper(N, k);
+        clock_t end = clock();
+        double time = double(end - start) / CLOCKS_PER_SEC;
+        cout << N << "\t\t" << res << "\t\t" << time << " ÑÐµÐº." << endl;
     }
     return 0;
 }
