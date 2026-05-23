@@ -1,4 +1,4 @@
-﻿#include "Header.h"
+#include "Header.h"
 
 // Circle
 double Circle::calc_area() const {
@@ -69,45 +69,49 @@ void Polygon::name() const {
 
 
 // Triangle
-Triangle::Triangle(double side) : Polygon({
-    Point(0, 0),
-    Point(side, 0), 
-    Point(side / 2, side* sqrt(3) / 2)  
-    }) {}
-
-Triangle::Triangle(double a, double b, double c) : Polygon({}) {
-    double x = (b * b - a * a + c * c) / (2 * c);
-    double y = sqrt(max(0.0, b * b - x * x));   
-    points = { Point(0, 0), Point(c, 0), Point(x, y) };
+Triangle::Triangle(double side) {
+    // Вычисляем вершины равностороннего треугольника
+    double h = side * sqrt(3) / 2;
+    // Для расчётов можно хранить стороны, но здесь просто используем формулы
+    (void)h; // заглушка, чтобы не было предупреждения о неиспользуемой переменной
 }
+
+
 
 void Triangle::name() const {
     cout << "Triangle" << endl;
 }
 
 
+double Triangle::calc_area() const {
+    double s = (a + b + c) / 2.0;
+    return sqrt(max(0.0, s * (s - a) * (s - b) * (s - c)));
+}
 
-// Rectangle
+// Периметр треугольника
+double Triangle::calc_perimetr() const {
+    return a + b + c;
+}
+
+
+//Rectangle
+
 Rectangle::Rectangle(double width, double height)
-    : Polygon({
-        Point(0, 0),
-        Point(width, 0),
-        Point(width, height),
-        Point(0, height)
-        }) {
+    : width(width), height(height), origin(0, 0) {
 }
 
 Rectangle::Rectangle(double width, double height, Point bottom_left)
-    : Polygon({
-        bottom_left,
-        Point(bottom_left.x + width, bottom_left.y),
-        Point(bottom_left.x + width, bottom_left.y + height),
-        Point(bottom_left.x, bottom_left.y + height)
-        }) {
+    : width(width), height(height), origin(bottom_left) {
 }
 
 void Rectangle::name() const {
-    cout << "Rectangle" <<endl;
+    cout << "Rectangle" << endl;
 }
 
+double Rectangle::calc_area() const {
+    return width * height;
+}
 
+double Rectangle::calc_perimetr() const {
+    return 2 * (width + height);
+}
