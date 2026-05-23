@@ -1,26 +1,31 @@
-﻿#include "Header.h"
+#include "Header.h"
 #include <iostream>
+#include <vector>
+
+using namespace std;
 
 int main() {
-    Circle c(Point(0, 0), 5.0);
-    c.name();
-    cout << " | Area: " << c.calc_area()
-        << " | Perimeter: " << c.calc_perimetr() << "\n";
 
-    Ellipse e(Point(1, 2), 4.0, 3.0);
-    e.name();
-    cout << " | Area: " << e.calc_area()    
-        << " | Perimeter: " << e.calc_perimetr() << "\n";
+    // Указатель на вектор фигур
+    vector<Shape*>* shapes = new vector<Shape*>();
 
-    Triangle t(3.0, 4.0, 5.0);
-    t.name();
-    cout << " | Area: " << t.calc_area()
-        << " | Perimeter: " << t.calc_perimetr() << "\n";
+    // Добавление фигур через указатель на вектор
+    shapes->push_back(new Circle(Point(0, 0), 5.0));
+    shapes->push_back(new Ellipse(Point(1, 2), 4.0, 3.0));
+    shapes->push_back(new Triangle(3.0, 4.0, 5.0));
+    shapes->push_back(new Rectangle(10.0, 5.0));
 
-    Rectangle r(10.0, 5.0);
-    r.name();
-    cout << " | Area: " << r.calc_area()
-        << " | Perimeter: " << r.calc_perimetr() << "\n";
+    // Вывод информации о фигурах
+    for (size_t i = 0; i < shapes->size(); ++i) {
+        (*shapes)[i]->name();
+        cout << " | Area: " << (*shapes)[i]->calc_area()
+            << " | Perimeter: " << (*shapes)[i]->calc_perimetr() << "\n";
+    }
+
+    for (size_t i = 0; i < shapes->size(); ++i) {
+        delete (*shapes)[i];
+    }
+    delete shapes;
 
     return 0;
 }
