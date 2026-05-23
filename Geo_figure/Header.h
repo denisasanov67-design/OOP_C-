@@ -1,4 +1,4 @@
-﻿#ifndef HEADER_H_INCLUDED
+#ifndef HEADER_H_INCLUDED
 #define HEADER_H_INCLUDED
 
 #include <iostream>
@@ -78,25 +78,29 @@ public:
 
     const vector<Point>& get_points() const { return points; } // конструктор для эффективной передачи 
 };
-
+    
 // Класс триугольника 
-class Triangle : public Polygon {
+class Triangle : public Shape {
+    double a, b, c;
 public:
-    Triangle(const vector<Point>& pts) : Polygon(pts) {}
     Triangle(double side);
-    Triangle(double a, double b, double c);
-
+    Triangle(double a, double b, double c) : a(a), b(b), c(c){}
     void name() const override;
+    double calc_area() const override;
+    double calc_perimetr() const override;
 };
 
 // Класс прямоугольника
-class Rectangle : public Polygon {
+class Rectangle : public Shape {
+    double width, height;
+    Point origin;
 public:
-    Rectangle(const vector<Point>& pts) : Polygon(pts) {}
     Rectangle(double width, double height);
     Rectangle(double width, double height, Point bottom_left);
 
     void name() const override;
+    double calc_area() const override;
+    double calc_perimetr() const override;
 };
     
 #endif 
