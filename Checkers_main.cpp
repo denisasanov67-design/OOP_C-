@@ -307,7 +307,7 @@ public:
 //////////////////////////////////////////////////////////////////
 
 int main() {
-    GameState initial = Parser::readFile("input.txt");
+    GameState initial = Parser::readFile("text.txt");
 
     Solver solver;
     // 6 полуходов = 3 полных хода. Можно увеличить до 8 или 10 для сложных позиций
