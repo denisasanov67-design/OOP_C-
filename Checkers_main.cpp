@@ -612,7 +612,7 @@ class Parser
 int main()
 {
     GameState initial =
-        Parser::readFile("input.txt");
+        Parser::readFile("text.txt");
 
     Node root;
     root.state=initial;
