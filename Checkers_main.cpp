@@ -7,16 +7,9 @@
 
 using namespace std;
 
-//////////////////////////////////////////////////////////////////
-// ENUMS
-//////////////////////////////////////////////////////////////////
-
 enum Color { WHITE, BLACK };
 
-//////////////////////////////////////////////////////////////////
-// BOARD
-//////////////////////////////////////////////////////////////////
-
+// игровое поле 8х8
 class Board {
 public:
     char grid[8][8];
@@ -58,20 +51,15 @@ public:
     }
 };
 
-//////////////////////////////////////////////////////////////////
-// GAME STATE (Перемещено выше, чтобы Parser его видел)
-//////////////////////////////////////////////////////////////////
 
+// Хранение полного состояния партии 
 class GameState {
 public:
     Board board;
     Color turn;
 };
 
-//////////////////////////////////////////////////////////////////
-// MOVE
-//////////////////////////////////////////////////////////////////
-
+// Описание одного хода фигуры 
 class Move {
 public:
     int sx, sy, ex, ey;
@@ -80,10 +68,8 @@ public:
     Move(int x1,int y1,int x2,int y2) : sx(x1), sy(y1), ex(x2), ey(y2) {}
 };
 
-//////////////////////////////////////////////////////////////////
-// RULES ENGINE
-//////////////////////////////////////////////////////////////////
 
+// Все правила игры 
 class RulesEngine {
 public:
     static bool isWhite(char p) { return p=='w' || p=='W'; }
@@ -198,7 +184,7 @@ ures(const Board& board, int x, int y, char piece,
                         nextBoard.set(mx, my, '.');
                         nextBoard.set(lx, ly, nextPiece);
 
-                        // Рекурсия (если превратилась в дамку, она может бить дальше как дамка)
+                        // Рекурсия 
                         findCaptures(nextBoard, lx, ly, nextPiece, m.captured, result);
                         result.push_back(m);
                     }
@@ -207,6 +193,7 @@ ures(const Board& board, int x, int y, char piece,
         }
     }
 
+    // генерация всех обычных ходов фигуры 
     static void findQuiet(const Board& board, int x, int y, char p, vector<Move>& result) {
         bool isKing = (p=='W' || p=='B');
         if(!isKing) {
@@ -231,6 +218,7 @@ int dirs[4][2] = {{1,1}, {1,-1}, {-1,1}, {-1,-1}};
     }
 
 public:
+    // применение хода к позиции и возвращение новой доски 
     static Board applyMove(const Board& board, const Move& move) {
         Board next = board.clone();
         char p = next.get(move.sx, move.sy);
@@ -249,12 +237,11 @@ public:
     }
 };
 
-//////////////////////////////////////////////////////////////////
-// PARSER
-//////////////////////////////////////////////////////////////////
 
+// загрузка позиции из файла 
 class Parser {
 public:
+    // преобразование координат 
     static pair<int,int> coordToXY(const string& s) {
         int x = s[0] - 'A';
         int y = 8 - (s[1] - '0');
@@ -293,15 +280,13 @@ public:
     }
 };
 
-//////////////////////////////////////////////////////////////////
-// SOLVER
-//////////////////////////////////////////////////////////////////
-
+// поиск выйгрышной последовательности ходов 
 class Solver {
 public:
     vector<Move> path;
     bool solved = false;
 
+    // рекурсивный поиск выйгрышной последовательности 
     void search(const Board& board, Color turn, int depth, int maxDepth, Color rootSide) {
         if(solved) return;
 
@@ -328,9 +313,6 @@ public:
     }
 };
 
-//////////////////////////////////////////////////////////////////
-// MAIN
-//////////////////////////////////////////////////////////////////
 
 int main() {
     GameState initial = Parser::readFile("input.txt");
