@@ -5,233 +5,248 @@
 Node::Node(const string& aname) : name(aname){}
 
 const string& Node::getName() const{
-	return (name);
+ return (name);
 }
 
-//Возвращает итератор на первого соседа узла
+//Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° РїРµСЂРІРѕРіРѕ СЃРѕСЃРµРґР° СѓР·Р»Р°
 node_iterator Node::nb_begin() const {
-	return neighbours.begin();
+ return neighbours.begin();
 }
 
-// Возвращает итератор на конец списка соседей узла
+// Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° РєРѕРЅРµС† СЃРїРёСЃРєР° СЃРѕСЃРµРґРµР№ СѓР·Р»Р°
 node_iterator Node::nb_end() const {
-	return neighbours.end();
+ return neighbours.end();
 }
 
-// Добавляет соседний узел в множество соседей
+// Р”РѕР±Р°РІР»СЏРµС‚ СЃРѕСЃРµРґРЅРёР№ СѓР·РµР» РІ РјРЅРѕР¶РµСЃС‚РІРѕ СЃРѕСЃРµРґРµР№
 void Node::addNeighbour(Node* neighbour) {
-	neighbours.insert(neighbour);
+ neighbours.insert(neighbour);
 }
 
-// Удаляет соседний узел из множества соседей
+// РЈРґР°Р»СЏРµС‚ СЃРѕСЃРµРґРЅРёР№ СѓР·РµР» РёР· РјРЅРѕР¶РµСЃС‚РІР° СЃРѕСЃРµРґРµР№
 void Node::removeNeighbour(Node* neighbour) {
-	neighbours.erase(neighbour);
+ neighbours.erase(neighbour);
 }
 
-// констуктор для графа с парами смежных вершин 
+// РєРѕРЅСЃС‚СѓРєС‚РѕСЂ РґР»СЏ РіСЂР°С„Р° СЃ РїР°СЂР°РјРё СЃРјРµР¶РЅС‹С… РІРµСЂС€РёРЅ 
 Graph::Graph(const char* file_name) {
-	ifstream file(file_name);
+ ifstream file(file_name);
 
-	string source, target;
+ //  РџСЂРѕРїСѓСЃРєР°РµРј РїРµСЂРІСѓСЋ СЃС‚СЂРѕРєСѓ 
+ string source, target;
+ while (file В» source В» target) {
+  if (source == "Source" || source == "Target") continue;
 
-	while (file >> source >> target) {
-		Node* s = findNode(source); // вершина источник
-		Node* t = findNode(target); // вершина цель 
+  Node* s = findNode(source);
+  if (s == nullptr) {
+   s = new Node(source);
+   addNode(s);
+  }
 
+  Node* t = findNode(target);
+  if (t == nullptr) {
+   t = new Node(target);
+   addNode(t);
+  }
 
-		if (s == nullptr) { 
-			
-			s = new Node(source);
-			addNode(s);
-		}
-		// если источнык или цель не найдены - создаем новый узел 
-		if (t == nullptr) {
-
-			t = new Node(target);
-			addNode(t);
-		}
-		addEdge(s, t); // ребро между вершинами
-	}
-	file.close();
+  addEdge(s, t);
+ }
+ file.close();
 }
 
+// РґРµСЃС‚СЂСѓРєС‚РѕСЂ 
 Graph::~Graph() {
-	for (node_iterator it = begin(); it != end(); ++it) {
-		delete* it;
-	}
+ for (node_iterator it = begin(); it != end(); ++it) {
+  delete* it;
+ }
 }
 
-// Добавление узела в множество вершин графа
+// Р”РѕР±Р°РІР»РµРЅРёРµ СѓР·РµР»Р° РІ РјРЅРѕР¶РµСЃС‚РІРѕ РІРµСЂС€РёРЅ РіСЂР°С„Р°
 void Graph::addNode(Node* node) {
-	nodes.insert(node); // вставляет узел в множество 
+ nodes.insert(node); // РІСЃС‚Р°РІР»СЏРµС‚ СѓР·РµР» РІ РјРЅРѕР¶РµСЃС‚РІРѕ 
 }
 
-// Удаление узела из графа
+// РЈРґР°Р»РµРЅРёРµ СѓР·РµР»Р° РёР· РіСЂР°С„Р°
 void Graph::removeNode(Node* node) {
-	nodes.erase(node); // удаляем узел из множества 
-	for (set<Node*>::iterator it = nodes.begin(); it != nodes.end(); it++) { // проходим по каждому оставшимуся узлу 
-		(*it)->removeNeighbour(node); // удаляем связь между удаленным узлом и его соседом 
-	}
+ nodes.erase(node); // СѓРґР°Р»СЏРµРј СѓР·РµР» РёР· РјРЅРѕР¶РµСЃС‚РІР° 
+ for (set<Node*>::iterator it = nodes.begin(); it != nodes.end(); it++) { // РїСЂРѕС…РѕРґРёРј РїРѕ РєР°Р¶РґРѕРјСѓ РѕСЃС‚Р°РІС€РёРјСѓСЃСЏ СѓР·Р»Сѓ 
+  (*it)->removeNeighbour(node); // СѓРґР°Р»СЏРµРј СЃРІСЏР·СЊ РјРµР¶РґСѓ СѓРґР°Р»РµРЅРЅС‹Рј СѓР·Р»РѕРј Рё РµРіРѕ СЃРѕСЃРµРґРѕРј 
+ }
 }
 
-// Добавляет неориентированное ребро между двумя вершинами
-void Graph::addEdge(Node* begin, Node* end) { // добавление ребра
-	if (nodes.find(begin) == nodes.end()) // если вершина begin не найдена во всех вершинах выходим 
-		return; 
-	if (nodes.find(end) == nodes.end()) 
-		return;
-	begin->addNeighbour(end); // у вешнины bеgin добавляем соседа 
-	end->addNeighbour(begin); 
+// Р”РѕР±Р°РІР»СЏРµС‚ РЅРµРѕСЂРёРµРЅС‚РёСЂРѕРІР°РЅРЅРѕРµ СЂРµР±СЂРѕ РјРµР¶РґСѓ РґРІСѓРјСЏ РІРµСЂС€РёРЅР°РјРё
+void Graph::addEdge(Node* begin, Node* end) { // РґРѕР±Р°РІР»РµРЅРёРµ СЂРµР±СЂР°
+ if (nodes.find(begin) == nodes.end()) // РµСЃР»Рё РІРµСЂС€РёРЅР° begin РЅРµ РЅР°Р№РґРµРЅР° РІРѕ РІСЃРµС… РІРµСЂС€РёРЅР°С… РІС‹С…РѕРґРёРј 
+  return; 
+ if (nodes.find(end) == nodes.end()) 
+  return;
+ begin->addNeighbour(end); // Сѓ РІРµС€РЅРёРЅС‹ bРµgin РґРѕР±Р°РІР»СЏРµРј СЃРѕСЃРµРґР° 
+ end->addNeighbour(begin); 
 }
 
-// Удаляет ребро между двумя вершинами
+// РЈРґР°Р»СЏРµС‚ СЂРµР±СЂРѕ РјРµР¶РґСѓ РґРІСѓРјСЏ РІРµСЂС€РёРЅР°РјРё
 void Graph::removeEdge(Node* begin, Node* end) {
-	if (nodes.find(begin) == nodes.end())
-		return;
-	if (nodes.find(end) == nodes.end())
-		return;
-	begin->removeNeighbour(end);
-	end->removeNeighbour(begin);
+ if (nodes.find(begin) == nodes.end())
+  return;
+ if (nodes.find(end) == nodes.end())
+  return;
+ begin->removeNeighbour(end);
+ end->removeNeighbour(begin);
 }
 
-// Ищет узел по имени в графе
+// РС‰РµС‚ СѓР·РµР» РїРѕ РёРјРµРЅРё РІ РіСЂР°С„Рµ
 Node* Graph::findNode(const string& name) {
-	for (node_iterator it = begin(); it != end(); ++it) {
-		if ((*it)->getName() == name) return*it;
-	}
-	return nullptr;
+ for (node_iterator it = begin(); it != end(); ++it) {
+  if ((*it)->getName() == name) return*it;
+ }
+ return nullptr;
 }
 
-// Возвращает итератор на первый узел в множестве графа
+// Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° РїРµСЂРІС‹Р№ СѓР·РµР» РІ РјРЅРѕР¶РµСЃС‚РІРµ РіСЂР°С„Р°
 node_iterator Graph::begin() const {
-	return nodes.begin(); // уазатель на первыый узел
+ return nodes.begin(); // СѓР°Р·Р°С‚РµР»СЊ РЅР° РїРµСЂРІС‹С‹Р№ СѓР·РµР»
 }
 
-// Возвращает итератор на конец множества графа
+// Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° РєРѕРЅРµС† РјРЅРѕР¶РµСЃС‚РІР° РіСЂР°С„Р°
 node_iterator Graph::end() const {
-	return nodes.end(); // указатель на последний узел 
+ return nodes.end(); // СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РїРѕСЃР»РµРґРЅРёР№ СѓР·РµР» 
 }
 
-// Проверка связи между двумя вершинами алгоритмом поиска в ширину
+// РџСЂРѕРІРµСЂРєР° СЃРІСЏР·Рё РјРµР¶РґСѓ РґРІСѓРјСЏ РІРµСЂС€РёРЅР°РјРё Р°Р»РіРѕСЂРёС‚РјРѕРј РїРѕРёСЃРєР° РІ С€РёСЂРёРЅСѓ
 bool BFS::connection(Node* begin, Node* end) {
-	queue<Node*> nodes; 
-	nodes.push(begin);
-	set<Node*> visited;
-	visited.insert(begin);
+ if (begin == end)return true;
+ queue<Node*> nodes; 
+ nodes.push(begin);
+ set<Node*> visited;
+ visited.insert(begin);
 
-	while (!nodes.empty()) {
-		Node* next = nodes.front(); nodes.pop();
-		if (end == next)return true;
-		visited.insert(next);
-		for (node_iterator it = next->nb_begin(); it != next->nb_end(); it++)
-			if (visited.find(*it) == visited.end()) {
-				visited.insert(*it);
-				nodes.push(*it);
-			}
-	}
-	return false;
+ while (!nodes.empty()) {
+  Node* next = nodes.front(); nodes.pop();
+  visited.insert(next);
+  for (node_iterator it = next->nb_begin(); it != next->nb_end(); it++)
+   if (visited.find(*it) == visited.end()) {
+    visited.insert(*it);
+    nodes.push(*it);
+   }
+ }
+ return false;
 }
 
-// проверка связи алгоритмом поиска в глубину
+// РїСЂРѕРІРµСЂРєР° СЃРІСЏР·Рё Р°Р»РіРѕСЂРёС‚РјРѕРј РїРѕРёСЃРєР° РІ РіР»СѓР±РёРЅСѓ
 bool DFS::connected(Node* begin, Node* end) {
-	visited.clear();
-	return connected(begin, end, 0);
+ visited.clear();
+ return connected(begin, end, 0);
 }
 
-// Приватный рекурсивный метод поиска в глубину
+// РџСЂРёРІР°С‚РЅС‹Р№ СЂРµРєСѓСЂСЃРёРІРЅС‹Р№ РјРµС‚РѕРґ РїРѕРёСЃРєР° РІ РіР»СѓР±РёРЅСѓ
 bool DFS::connected(Node* begin, Node* end, int depth) {
-	if (begin == end) return true;
-	visited.insert(begin);
-	for (node_iterator it = begin->nb_begin(); it != begin->nb_end(); it++) {
-		if (visited.find(*it) == visited.end()) {
-			if (connected(*it, end, depth + 1)) return true;
-		}
-	}
-	return false;
+ if (begin == end) return true;
+ visited.insert(begin);
+ for (node_iterator it = begin->nb_begin(); it != begin->nb_end(); it++) {
+  if (visited.find(*it) == visited.end()) {
+   if (connected(*it, end, depth + 1)) return true;
+  }
+ }
+ return false;
 }
 
-// Извлекание элемента с наивысшим приоритетом
+// РР·РІР»РµРєР°РЅРёРµ СЌР»РµРјРµРЅС‚Р° СЃ РЅР°РёРІС‹СЃС€РёРј РїСЂРёРѕСЂРёС‚РµС‚РѕРј
 MarkedNode PriorityQueue::pop() {
-	MarkedNode mn = nodes.front();
-	nodes.erase(nodes.begin());
-	return mn;
+ MarkedNode mn = nodes.front();
+ nodes.erase(nodes.begin());
+ return mn;
 }
 
-// Добавляет элемент в приоритетную очередь
+// Р”РѕР±Р°РІР»СЏРµС‚ СЌР»РµРјРµРЅС‚ РІ РїСЂРёРѕСЂРёС‚РµС‚РЅСѓСЋ РѕС‡РµСЂРµРґСЊ
 void PriorityQueue::push(Node* node, int mark, Node* prev) {
-	std::vector<MarkedNode>::iterator it = nodes.begin();
-	MarkedNode mn(node, mark, prev);
-	while (it != nodes.end() && mark < it->mark) ++it;
-	nodes.insert(it, mn);
+ std::vector<MarkedNode>::iterator it = nodes.begin();
+ MarkedNode mn(node, mark, prev);
+ while (it != nodes.end() && mark < it->mark) ++it;
+ nodes.insert(it, mn);
 }
 
-// Находит все непересекающиеся компоненты связности графа
-vector < vector < Node* >> Graph::connectedComponents() {
-	vector < vector < Node* >> components;
-	set<Node*> visited;
 
-	for (node_iterator it = begin();it != end();++it) {
+// РќР°С…РѕРґРёС‚ РІСЃРµ РЅРµРїРµСЂРµСЃРµРєР°СЋС‰РёРµСЃСЏ РєРѕРјРїРѕРЅРµРЅС‚С‹ СЃРІСЏР·РЅРѕСЃС‚Рё РіСЂР°С„Р°
+vector < vector < Node* В» Graph::connectedComponents() {
+ vector < vector < Node* В» components;
+ set<Node*> visited;
 
-		Node* start = *it;
+ for (node_iterator it = begin();it != end();++it) {
 
-		if (visited.find(start) != visited.end()) continue;
+  Node* start = *it;
 
-		vector<Node*> component;
-		queue<Node*> q;
-		q.push(start);
-		visited.insert(start);
+  if (visited.find(start) != visited.end()) continue;
 
-		while (!q.empty()) {
+  vector<Node*> component;
+  queue<Node*> q;
+  q.push(start);
+  visited.insert(start);
 
-			Node* current = q.front();
-			q.pop();
-			component.push_back(current);
+  while (!q.empty()) {
 
-			for (node_iterator nb =current->nb_begin();nb != current->nb_end();++nb) {
+   Node* current = q.front();
+   q.pop();
+   component.push_back(current);
 
-				if (visited.find(*nb) == visited.end()) {
+   for (node_iterator nb =current->nb_begin();nb != current->nb_end();++nb) {
 
-					visited.insert(*nb);
-					q.push(*nb);
-				}
-			}
-		}
+    if (visited.find(*nb) == visited.end()) {
 
-		components.push_back(component);
-	}
+     visited.insert(*nb);
+     q.push(*nb);
+    }
+   }
+  }
 
-	return components;
+  components.push_back(component);
+ }
+
+ return components;
 }
 
-// Сохраняет каждую компоненту связности в отдельный текстовый файл
-void Graph::saveComponents(vector < vector < Node* >>& components) {
+// РЎРѕС…СЂР°РЅСЏРµС‚ РєР°Р¶РґСѓСЋ РєРѕРјРїРѕРЅРµРЅС‚Сѓ СЃРІСЏР·РЅРѕСЃС‚Рё СЃ РїСЂРµС„РёРєСЃРѕРј  РІ РѕС‚РґРµР»СЊРЅС‹Р№ С‚РµРєСЃС‚РѕРІС‹Р№ С„Р°Р№Р» 
+void Graph::saveComponents(vector<vector<Node*В»& components, const string& prefix) {
 
-	for (size_t i = 0;i < components.size();i++) {
+  string filename = prefix + "component_" + to_string(i + 1) + ".txt";
+  remove(filename.c_str());
 
-		string filename ="component_" +to_string(i + 1) +".txt";
-		ofstream file(filename);
+  ofstream file(filename);
+  }
 
-		set < pair < string, string >> edges;
-		for (Node* node : components[i]) {
-			for (node_iterator nb =
-				node->nb_begin();
-				nb != node->nb_end();
-				++nb) {
+  set<pair<string, stringВ» edges;
 
-				string a = node->getName();
-				string b = (*nb)->getName();
+  // РЎРѕР±РёСЂР°РµРј РІСЃРµ СЂС‘Р±СЂР° РєРѕРјРїРѕРЅРµРЅС‚С‹
+  for (Node* node : components[i]) {
+   for (node_iterator nb = node->nb_begin(); nb != node->nb_end(); ++nb) {
+    string a = node->getName();
+    string b = (*nb)->getName();
 
-				if (a < b)
-					edges.insert({ a, b });
-				else
-					edges.insert({ b, a });
-			}
-		}
-		for (const auto& edge : edges) {
+    // РќРѕСЂРјР°Р»РёР·СѓРµРј РїРѕСЂСЏРґРѕРє (РјРµРЅСЊС€РµРµ РёРјСЏ РїРµСЂРІС‹Рј)
+    if (a < b)
+     edges.insert({ a, b });
+    else
+     edges.insert({ b, a });
+   }
+  }
 
-			file << edge.first<< " "<<edge.second << endl;
-		}
+  // Р—Р°РїРёСЃС‹РІР°РµРј СЂС‘Р±СЂР° РІ С„Р°Р№Р»
+  for (const auto& edge : edges) {
+   file В« edge.first В« " " В« edge.second В« endl;
+  }
 
-		file.close();
-	}
+  // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅР°СЏ Р·Р°РїРёСЃСЊ Рё Р·Р°РєСЂС‹С‚РёРµ
+  file.flush();
+  file.close();
+
+  // РџСЂРѕРІРµСЂРєР° СЂР°Р·РјРµСЂР° С„Р°Р№Р»Р°
+  ifstream check(filename, ios::binary | ios::ate);
+  check.close();
+
+  cout В« "  Р¤Р°Р№Р» " В« filename В« " СЃРѕС…СЂР°РЅС‘РЅ В« endl;
+ }
+}
+
+void Graph::cleanupOldFiles(const string& pattern) {
+ string cmd = "del " + pattern + " /Q 2>nul";
+ system(cmd.c_str());
 }
