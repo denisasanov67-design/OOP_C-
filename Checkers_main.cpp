@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -11,19 +12,6 @@ using namespace std;
 //////////////////////////////////////////////////////////////////
 
 enum Color { WHITE, BLACK };
-enum PieceType { MAN, KING };
-
-//////////////////////////////////////////////////////////////////
-// MOVE
-//////////////////////////////////////////////////////////////////
-
-class Move {
-public:
-    int sx, sy, ex, ey;
-    vector<pair<int,int>> captured;
-
-    Move(int x1,int y1,int x2,int y2) : sx(x1), sy(y1), ex(x2), ey(y2) {}
-};
 
 //////////////////////////////////////////////////////////////////
 // BOARD
@@ -47,7 +35,8 @@ public:
 
     Board clone() const {
         Board b;
-        for(int r=0;r<8;r++)            for(int c=0;c<8;c++)
+        for(int r=0;r<8;r++)
+            for(int c=0;c<8;c++)
                 b.grid[r][c]=grid[r][c];
         return b;
     }
@@ -67,6 +56,28 @@ public:
                 if(grid[r][c]=='b' || grid[r][c]=='B') cnt++;
         return cnt;
     }
+};
+
+//////////////////////////////////////////////////////////////////
+// GAME STATE (Перемещено выше, чтобы Parser его видел)
+//////////////////////////////////////////////////////////////////
+
+class GameState {
+public:
+    Board board;
+    Color turn;
+};
+
+//////////////////////////////////////////////////////////////////
+// MOVE
+//////////////////////////////////////////////////////////////////
+
+class Move {
+public:
+    int sx, sy, ex, ey;
+    vector<pair<int,int» captured;
+
+    Move(int x1,int y1,int x2,int y2) : sx(x1), sy(y1), ex(x2), ey(y2) {}
 };
 
 //////////////////////////////////////////////////////////////////
@@ -96,7 +107,8 @@ public:
                 vector<Move> pieceCaps;
                 findCaptures(board, x, y, p, {}, pieceCaps);
                 for(auto& m : pieceCaps) allCaptures.push_back(m);
-            }        }
+            }
+        }
 
         // Если есть хоть одно взятие - возвращаем только их (обязательное правило)
         if(!allCaptures.empty()) return allCaptures;
@@ -114,44 +126,58 @@ public:
     }
 
 private:
-    static void findCaptures(const Board& board, int x, int y, char piece,
-                             const vector<pair<int,int>>& capturedSoFar,
+    static void findCapt
+
+
+ures(const Board& board, int x, int y, char piece,
+                             const vector<pair<int,int»& capturedSoFar,
                              vector<Move>& result) {
         bool isKing = (piece == 'W' || piece == 'B');
         int dirs[4][2] = {{1,1}, {1,-1}, {-1,1}, {-1,-1}};
 
         for(auto& d : dirs) {
             if(isKing) {
+                // Логика для ДАМКИ (летит пока не встретит врага)
                 int mx = x + d[0], my = y + d[1];
                 while(board.inside(mx, my) && board.get(mx, my) == '.') {
                     mx += d[0]; my += d[1];
                 }
+                
+                // Если встретили врага
                 if(board.inside(mx, my) && isEnemy(piece, board.get(mx, my))) {
                     bool already = false;
                     for(auto& c : capturedSoFar)
                         if(c.first==mx && c.second==my) { already=true; break; }
                     
                     if(!already) {
+                        // Ищем куда приземлиться за врагом
                         int lx = mx + d[0], ly = my + d[1];
                         while(board.inside(lx, ly) && board.get(lx, ly) == '.') {
                             Move m(x, y, lx, ly);
                             m.captured = capturedSoFar;
                             m.captured.push_back({mx, my});
 
+                            // Создаем виртуальную доску для проверки продолжения цепочки
                             Board nextBoard = board.clone();
                             nextBoard.set(x, y, '.');
                             nextBoard.set(mx, my, '.');
                             nextBoard.set(lx, ly, piece);
 
+                            // Рекурсивно ищем продолжение взятия
                             findCaptures(nextBoard, lx, ly, piece, m.captured, result);
+                            
+                            // Добавляем текущий вариант (даже если рекурсия выше ничего не нашла, это конец цепочки)
                             result.push_back(m);
+
                             lx += d[0]; ly += d[1];
                         }
                     }
                 }
             } else {
+                // Логика для ПРОСТОЙ (прыжок через 1 клетку)
                 int mx = x + d[0], my = y + d[1];
                 int lx = x + 2*d[0], ly = y + 2*d[1];
+                
                 if(board.inside(lx, ly) && isEnemy(piece, board.get(mx, my)) && board.get(lx, ly)=='.') {
                     bool already = false;
                     for(auto& c : capturedSoFar)
@@ -162,6 +188,7 @@ private:
                         m.captured = capturedSoFar;
                         m.captured.push_back({mx, my});
 
+                        // Проверка на превращение в дамку
                         char nextPiece = piece;
                         if(piece=='w' && ly==0) nextPiece='W';
                         if(piece=='b' && ly==7) nextPiece='B';
@@ -171,6 +198,7 @@ private:
                         nextBoard.set(mx, my, '.');
                         nextBoard.set(lx, ly, nextPiece);
 
+                        // Рекурсия (если превратилась в дамку, она может бить дальше как дамка)
                         findCaptures(nextBoard, lx, ly, nextPiece, m.captured, result);
                         result.push_back(m);
                     }
@@ -189,12 +217,15 @@ private:
                     result.push_back(Move(x,y,nx,ny));
             }
         } else {
-            int dirs[4][2] = {{1,1}, {1,-1}, {-1,1}, {-1,-1}};
+
+
+int dirs[4][2] = {{1,1}, {1,-1}, {-1,1}, {-1,-1}};
             for(auto& d : dirs) {
                 int nx = x+d[0], ny = y+d[1];
                 while(board.inside(nx,ny) && board.get(nx,ny)=='.') {
                     result.push_back(Move(x,y,nx,ny));
-                    nx += d[0]; ny += d[1];                }
+                    nx += d[0]; ny += d[1];
+                }
             }
         }
     }
@@ -215,6 +246,50 @@ public:
         if(p=='b' && move.ey==7) next.set(move.ex, move.ey, 'B');
 
         return next;
+    }
+};
+
+//////////////////////////////////////////////////////////////////
+// PARSER
+//////////////////////////////////////////////////////////////////
+
+class Parser {
+public:
+    static pair<int,int> coordToXY(const string& s) {
+        int x = s[0] - 'A';
+        int y = 8 - (s[1] - '0');
+        return {x, y};
+    }
+
+    static GameState readFile(const string& filename) {
+        ifstream in(filename);
+        if(!in) {
+            cerr « "Error: Cannot open " « filename « endl;
+            exit(1);
+        }
+
+        GameState state;
+        string token;
+        int count;
+
+        in » token » count; // White: N
+        for(int i=0; i<count; ++i) {
+            string pos; in » pos;
+            auto p = coordToXY(pos);
+            state.board.set(p.first, p.second, 'w');
+        }
+
+        in » token » count; // Black: N
+        for(int i=0; i<count; ++i) {
+            string pos; in » pos;
+            bool king = false;
+            if(pos[0]=='M') { king=true; pos=pos.substr(1); }
+            auto p = coordToXY(pos);
+            state.board.set(p.first, p.second, king?'B':'b');
+        }
+
+        state.turn = WHITE;
+        return state;
     }
 };
 
@@ -243,7 +318,8 @@ public:
         if(depth >= maxDepth) return;
 
         vector<Move> moves = RulesEngine::getValidMoves(board, turn);
-        for(auto& mv : moves) {            path.push_back(mv);
+        for(auto& mv : moves) {
+            path.push_back(mv);
             Board nextBoard = RulesEngine::applyMove(board, mv);
             search(nextBoard, turn==WHITE?BLACK:WHITE, depth+1, maxDepth, rootSide);
             if(solved) return;
@@ -253,77 +329,28 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////
-// PARSER
-//////////////////////////////////////////////////////////////////
-
-class Parser {
-public:
-    static pair<int,int> coordToXY(const string& s) {
-        int x = s[0] - 'A';
-        int y = 8 - (s[1] - '0');
-        return {x, y};
-    }
-
-    static GameState readFile(const string& filename) {
-        ifstream in(filename);
-        if(!in) {
-            cerr << "Error: Cannot open " << filename << endl;
-            exit(1);
-        }
-
-        GameState state;
-        string token;
-        int count;
-
-        in >> token >> count; // White: N
-        for(int i=0; i<count; ++i) {
-            string pos; in >> pos;
-            auto p = coordToXY(pos);
-            state.board.set(p.first, p.second, 'w');
-        }
-
-        in >> token >> count; // Black: N
-        for(int i=0; i<count; ++i) {
-            string pos; in >> pos;
-            bool king = false;
-            if(pos[0]=='M') { king=true; pos=pos.substr(1); }
-            auto p = coordToXY(pos);
-            state.board.set(p.first, p.second, king?'B':'b');
-        }
-
-        state.turn = WHITE;
-        return state;    }
-};
-
-// Forward declaration for GameState
-class GameState {
-public:
-    Board board;
-    Color turn;
-};
-
-//////////////////////////////////////////////////////////////////
 // MAIN
 //////////////////////////////////////////////////////////////////
 
 int main() {
-    GameState initial = Parser::readFile("text.txt");
+    GameState initial = Parser::readFile("input.txt");
 
     Solver solver;
-    // 6 полуходов = 3 полных хода. Можно увеличить до 8 или 10 для сложных позиций
+    // 6 полуходов = 3 полных хода.
     solver.search(initial.board, initial.turn, 0, 6, WHITE);
 
     ofstream out("output.txt");
     if(solver.solved) {
         for(auto& m : solver.path) {
-            out << (char)('A'+m.sx) << (8-m.sy) 
-                << " -> " 
-                << (char)('A'+m.ex) << (8-m.ey) << "\n";
+            out « (char)('A'+m.sx) « (8-m.sy) 
+                « " -> " 
+                « (char)('A'+m.ex) « (8-m.ey) « "\n";
         }
     } else {
-        out << "NO WIN FOUND\n";
+        out « "NO WIN FOUND\n";
     }
     out.close();
 
     return 0;
 }
+
