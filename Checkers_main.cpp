@@ -1,338 +1,396 @@
-
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
-#include <algorithm>
 
 using namespace std;
 
-enum Color { WHITE, BLACK };
+// Константы для цветов
+const char WHITE_PIECE = 'w';
+const char WHITE_KING  = 'W';
+const char BLACK_PIECE = 'b';
+const char BLACK_KING  = 'B';
+const char EMPTY       = '.';
 
-// игровое поле 8х8
-class Board {
-public:
-    char grid[8][8];
+// Структура для описания хода
+struct Move {
+    int start_x, start_y; // Откуда
+    int end_x, end_y;     // Куда
+    vector<pair<int, int>> captures; // Список срубленных шашек
+};
 
-    Board() { clear(); }
+// Структура для доски
+struct Board {
+    char cells[8][8]; // Игровое поле
 
-    void clear() {
-        for(int r=0;r<8;r++)
-            for(int c=0;c<8;c++)
-                grid[r][c]='.';
+    // Конструктор: очищает доску
+    Board() {
+        for (int y = 0; y < 8; y++)
+            for (int x = 0; x < 8; x++)
+                cells[y][x] = EMPTY;
     }
 
-    bool inside(int x,int y) const { return x>=0 && x<8 && y>=0 && y<8; }
-    char get(int x,int y) const { return grid[y][x]; }
-    void set(int x,int y,char v) { grid[y][x]=v; }
-
+    // Копирование доски (нужно для рекурсии)
     Board clone() const {
-        Board b;
-        for(int r=0;r<8;r++)
-            for(int c=0;c<8;c++)
-                b.grid[r][c]=grid[r][c];
-        return b;
+        Board new_board;
+        for (int y = 0; y < 8; y++)
+            for (int x = 0; x < 8; x++)
+                new_board.cells[y][x] = cells[y][x];
+        return new_board;
     }
 
-    int countWhite() const {
-        int cnt=0;
-        for(int r=0;r<8;r++)
-            for(int c=0;c<8;c++)
-                if(grid[r][c]=='w' || grid[r][c]=='W') cnt++;
+    // Проверка, находится ли клетка в пределах доски
+    bool is_valid_pos(int x, int y) const {
+        return x >= 0 && x < 8 && y >= 0 && y < 8;
+    }
+
+    // Подсчет оставшихся шашек
+    int count_white() const {
+        int cnt = 0;
+        for (int y = 0; y < 8; y++)            for (int x = 0; x < 8; x++)
+                if (cells[y][x] == WHITE_PIECE || cells[y][x] == WHITE_KING) cnt++;
         return cnt;
     }
 
-    int countBlack() const {
-        int cnt=0;
-        for(int r=0;r<8;r++)
-            for(int c=0;c<8;c++)
-                if(grid[r][c]=='b' || grid[r][c]=='B') cnt++;
+    int count_black() const {
+        int cnt = 0;
+        for (int y = 0; y < 8; y++)
+            for (int x = 0; x < 8; x++)
+                if (cells[y][x] == BLACK_PIECE || cells[y][x] == BLACK_KING) cnt++;
         return cnt;
     }
 };
 
+///////////////////////////////////////////////////////////////
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (Логика)
+///////////////////////////////////////////////////////////////
 
-// Хранение полного состояния партии 
-class GameState {
-public:
-    Board board;
-    Color turn;
-};
+// Является ли шашка белой?
+bool is_white(char p) { return p == WHITE_PIECE || p == WHITE_KING; }
 
-// Описание одного хода фигуры 
-class Move {
-public:
-    int sx, sy, ex, ey;
-    vector<pair<int,int» captured;
+// Является ли шашка черной?
+bool is_black(char p) { return p == BLACK_PIECE || p == BLACK_KING; }
 
-    Move(int x1,int y1,int x2,int y2) : sx(x1), sy(y1), ex(x2), ey(y2) {}
-};
+// Являются ли две шашки врагами?
+bool is_enemy(char p1, char p2) {
+    if (p1 == EMPTY || p2 == EMPTY) return false;
+    return (is_white(p1) && is_black(p2)) || (is_black(p1) && is_white(p2));
+}
 
+// Получить шашку по координатам
+char get_piece(const Board& b, int x, int y) {
+    if (!b.is_valid_pos(x, y)) return EMPTY;
+    return b.cells[y][x];
+}
 
-// Все правила игры 
-class RulesEngine {
-public:
-    static bool isWhite(char p) { return p=='w' || p=='W'; }
-    static bool isBlack(char p) { return p=='b' || p=='B'; }
-    static bool isEnemy(char a, char b) {
-        if(a=='.' || b=='.') return false;
-        return (isWhite(a)&&isBlack(b)) || (isBlack(a)&&isWhite(b));
-    }
+///////////////////////////////////////////////////////////////
+// ГЕНЕРАЦИЯ ХОДОВ
+///////////////////////////////////////////////////////////////
 
-    static vector<Move> getValidMoves(const Board& board, Color turn) {
-        vector<Move> allCaptures;
-        vector<Move> quietMoves;
+// Рекурсивная функция для поиска цепочек взятий
+void find_captures(const Board& board, int x, int y, char current_piece, 
+                   const vector<pair<int, int>>& path_so_far, 
+                   vector<Move>& result_moves) {
+    
+    bool is_king = (current_piece == WHITE_KING || current_piece == BLACK_KING);
+    
+    // 4 направления диагонали: (1,1), (1,-1), (-1,1), (-1,-1)
+    int dx[] = {1, 1, -1, -1};
+    int dy[] = {1, -1, 1, -1};
+    for (int i = 0; i < 4; i++) {
+        int dir_x = dx[i];
+        int dir_y = dy[i];
 
-        // 1. Собираем все возможные взятия со всех шашек
-        for(int y=0; y<8; ++y) {
-            for(int x=0; x<8; ++x) {
-                char p = board.get(x,y);
-                bool isMyPiece = (turn==WHITE && isWhite(p)) || (turn==BLACK && isBlack(p));
-                if(!isMyPiece) continue;
+        if (is_king) {
+            // ЛОГИКА ДЛЯ ДАМКИ (летит через всё поле)
+            int enemy_x = x + dir_x;
+            int enemy_y = y + dir_y;
 
-                vector<Move> pieceCaps;
-                findCaptures(board, x, y, p, {}, pieceCaps);
-                for(auto& m : pieceCaps) allCaptures.push_back(m);
+            // 1. Летим, пока не встретим шашку или край
+            while (board.is_valid_pos(enemy_x, enemy_y) && get_piece(board, enemy_x, enemy_y) == EMPTY) {
+                enemy_x += dir_x;
+                enemy_y += dir_y;
             }
-        }
 
-        // Если есть хоть одно взятие - возвращаем только их (обязательное правило)
-        if(!allCaptures.empty()) return allCaptures;
-
-        // 2. Иначе собираем тихие ходы
-        for(int y=0; y<8; ++y) {
-            for(int x=0; x<8; ++x) {
-                char p = board.get(x,y);
-                bool isMyPiece = (turn==WHITE && isWhite(p)) || (turn==BLACK && isBlack(p));
-                if(!isMyPiece) continue;
-                findQuiet(board, x, y, p, quietMoves);
-            }
-        }
-        return quietMoves;
-    }
-
-private:
-    static void findCapt
-
-
-ures(const Board& board, int x, int y, char piece,
-                             const vector<pair<int,int»& capturedSoFar,
-                             vector<Move>& result) {
-        bool isKing = (piece == 'W' || piece == 'B');
-        int dirs[4][2] = {{1,1}, {1,-1}, {-1,1}, {-1,-1}};
-
-        for(auto& d : dirs) {
-            if(isKing) {
-                // Логика для ДАМКИ (летит пока не встретит врага)
-                int mx = x + d[0], my = y + d[1];
-                while(board.inside(mx, my) && board.get(mx, my) == '.') {
-                    mx += d[0]; my += d[1];
-                }
+            // 2. Если встретили врага
+            if (board.is_valid_pos(enemy_x, enemy_y) && is_enemy(current_piece, get_piece(board, enemy_x, enemy_y))) {
                 
-                // Если встретили врага
-                if(board.inside(mx, my) && isEnemy(piece, board.get(mx, my))) {
-                    bool already = false;
-                    for(auto& c : capturedSoFar)
-                        if(c.first==mx && c.second==my) { already=true; break; }
+                // Проверка: не били ли мы уже эту шашку в этой цепочке?
+                bool already_captured = false;
+                for (auto p : path_so_far) {
+                    if (p.first == enemy_x && p.second == enemy_y) already_captured = true;
+                }
+
+                if (!already_captured) {
+                    // 3. Ищем, куда приземлиться ЗА врагом
+                    int land_x = enemy_x + dir_x;
+                    int land_y = enemy_y + dir_y;
+
+                    while (board.is_valid_pos(land_x, land_y) && get_piece(board, land_x, land_y) == EMPTY) {
+                        // Формируем ход
+                        Move m;
+                        m.start_x = x; m.start_y = y;
+                        m.end_x = land_x; m.end_y = land_y;
+                        m.captures = path_so_far;
+                        m.captures.push_back({enemy_x, enemy_y});
+
+                        // Создаем временную доску для проверки продолжения цепочки
+                        Board next_board = board.clone();
+                        next_board.cells[y][x] = EMPTY; // Убрали шашку со старта
+                        next_board.cells[enemy_y][enemy_x] = EMPTY; // Срубили врага
+                        next_board.cells[land_y][land_x] = current_piece; // Поставили на новую клетку
+
+                        // Рекурсивно ищем продолжение взятия
+                        find_captures(next_board, land_x, land_y, current_piece, m.captures, result_moves);
+                        
+                        // Добавляем этот вариант в список (это конец цепочки или промежуточный шаг)
+                        result_moves.push_back(m);
+                        land_x += dir_x;
+                        land_y += dir_y;
+                    }
+                }
+            }
+        } else {
+            // ЛОГИКА ДЛЯ ПРОСТОЙ ШАШКИ (бьет только через 1 клетку)
+            int enemy_x = x + dir_x;
+            int enemy_y = y + dir_y;
+            int land_x = x + 2 * dir_x;
+            int land_y = y + 2 * dir_y;
+
+            if (board.is_valid_pos(land_x, land_y)) {
+                char enemy_piece = get_piece(board, enemy_x, enemy_y);
+                char land_spot = get_piece(board, land_x, land_y);
+
+                if (is_enemy(current_piece, enemy_piece) && land_spot == EMPTY) {
                     
-                    if(!already) {
-                        // Ищем куда приземлиться за врагом
-                        int lx = mx + d[0], ly = my + d[1];
-                        while(board.inside(lx, ly) && board.get(lx, ly) == '.') {
-                            Move m(x, y, lx, ly);
-                            m.captured = capturedSoFar;
-                            m.captured.push_back({mx, my});
+                    // Проверка на повторное взятие
+                    bool already_captured = false;
+                    for (auto p : path_so_far) {
+                        if (p.first == enemy_x && p.second == enemy_y) already_captured = true;
+                    }
 
-                            // Создаем виртуальную доску для проверки продолжения цепочки
-                            Board nextBoard = board.clone();
-                            nextBoard.set(x, y, '.');
-                            nextBoard.set(mx, my, '.');
-                            nextBoard.set(lx, ly, piece);
+                    if (!already_captured) {
+                        Move m;
+                        m.start_x = x; m.start_y = y;
+                        m.end_x = land_x; m.end_y = land_y;
+                        m.captures = path_so_far;
+                        m.captures.push_back({enemy_x, enemy_y});
 
-                            // Рекурсивно ищем продолжение взятия
-                            findCaptures(nextBoard, lx, ly, piece, m.captured, result);
-                            
-                            // Добавляем текущий вариант (даже если рекурсия выше ничего не нашла, это конец цепочки)
-                            result.push_back(m);
+                        // Превращение в дамку?
+                        char next_piece = current_piece;
+                        if (current_piece == WHITE_PIECE && land_y == 0) next_piece = WHITE_KING;
+                        if (current_piece == BLACK_PIECE && land_y == 7) next_piece = BLACK_KING;
 
-                            lx += d[0]; ly += d[1];
+                        // Временная доска
+                        Board next_board = board.clone();
+                        next_board.cells[y][x] = EMPTY;
+                        next_board.cells[enemy_y][enemy_x] = EMPTY;
+                        next_board.cells[land_y][land_x] = next_piece;
+
+                        // Рекурсия
+                        find_captures(next_board, land_x, land_y, next_piece, m.captures, result_moves);
+                        result_moves.push_back(m);
+                    }
+                }
+            }
+        }
+    }}
+
+// Получить все допустимые ходы для игрока
+vector<Move> get_all_moves(const Board& board, bool is_white_turn) {
+    vector<Move> captures;
+    vector<Move> quiet_moves;
+
+    // 1. Сначала ищем ВСЕ возможные взятия на доске
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            char p = board.cells[y][x];
+            bool is_my_piece = is_white_turn ? is_white(p) : is_black(p);
+
+            if (is_my_piece) {
+                vector<Move> piece_captures;
+                find_captures(board, x, y, p, {}, piece_captures);
+                for (auto m : piece_captures) captures.push_back(m);
+            }
+        }
+    }
+
+    // В шашках если есть взятие, тихие ходы запрещены
+    if (!captures.empty()) return captures;
+
+    // 2. Если взятий нет, ищем тихие ходы
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            char p = board.cells[y][x];
+            bool is_my_piece = is_white_turn ? is_white(p) : is_black(p);
+            
+            if (is_my_piece) {
+                bool is_king = (p == WHITE_KING || p == BLACK_KING);
+                
+                if (!is_king) {
+                    // Обычная шашка ходит на 1 клетку вперед
+                    int dir_y = is_white_turn ? -1 : 1;
+                    for (int dx : {-1, 1}) {
+                        int nx = x + dx;
+                        int ny = y + dir_y;
+                        if (board.is_valid_pos(nx, ny) && get_piece(board, nx, ny) == EMPTY) {
+                            Move m; m.start_x=x; m.start_y=y; m.end_x=nx; m.end_y=ny;
+                            quiet_moves.push_back(m);
+                        }
+                    }
+                } else {
+                    // Дамка ходит на любое свободное поле по диагонали
+                    int dirs[4][2] = {{1,1}, {1,-1}, {-1,1}, {-1,-1}};
+                    for (auto& d : dirs) {
+                        int nx = x + d[0];
+                        int ny = y + d[1];                        while (board.is_valid_pos(nx, ny) && get_piece(board, nx, ny) == EMPTY) {
+                            Move m; m.start_x=x; m.start_y=y; m.end_x=nx; m.end_y=ny;
+                            quiet_moves.push_back(m);
+                            nx += d[0]; ny += d[1];
                         }
                     }
                 }
-            } else {
-                // Логика для ПРОСТОЙ (прыжок через 1 клетку)
-                int mx = x + d[0], my = y + d[1];
-                int lx = x + 2*d[0], ly = y + 2*d[1];
-                
-                if(board.inside(lx, ly) && isEnemy(piece, board.get(mx, my)) && board.get(lx, ly)=='.') {
-                    bool already = false;
-                    for(auto& c : capturedSoFar)
-                        if(c.first==mx && c.second==my) { already=true; break; }
-                    
-                    if(!already) {
-                        Move m(x, y, lx, ly);
-                        m.captured = capturedSoFar;
-                        m.captured.push_back({mx, my});
-
-                        // Проверка на превращение в дамку
-                        char nextPiece = piece;
-                        if(piece=='w' && ly==0) nextPiece='W';
-                        if(piece=='b' && ly==7) nextPiece='B';
-
-                        Board nextBoard = board.clone();
-                        nextBoard.set(x, y, '.');
-                        nextBoard.set(mx, my, '.');
-                        nextBoard.set(lx, ly, nextPiece);
-
-                        // Рекурсия 
-                        findCaptures(nextBoard, lx, ly, nextPiece, m.captured, result);
-                        result.push_back(m);
-                    }
-                }
             }
         }
     }
+    return quiet_moves;
+}
 
-    // генерация всех обычных ходов фигуры 
-    static void findQuiet(const Board& board, int x, int y, char p, vector<Move>& result) {
-        bool isKing = (p=='W' || p=='B');
-        if(!isKing) {
-            int dy = (p=='w') ? -1 : 1;
-            for(int dx : {-1, 1}) {
-                int nx = x+dx, ny = y+dy;
-                if(board.inside(nx,ny) && board.get(nx,ny)=='.')
-                    result.push_back(Move(x,y,nx,ny));
-            }
-        } else {
+///////////////////////////////////////////////////////////////
+// РЕШАТЕЛЬ (DFS)
+///////////////////////////////////////////////////////////////
 
-
-int dirs[4][2] = {{1,1}, {1,-1}, {-1,1}, {-1,-1}};
-            for(auto& d : dirs) {
-                int nx = x+d[0], ny = y+d[1];
-                while(board.inside(nx,ny) && board.get(nx,ny)=='.') {
-                    result.push_back(Move(x,y,nx,ny));
-                    nx += d[0]; ny += d[1];
-                }
-            }
-        }
-    }
-
-public:
-    // применение хода к позиции и возвращение новой доски 
-    static Board applyMove(const Board& board, const Move& move) {
-        Board next = board.clone();
-        char p = next.get(move.sx, move.sy);
-        next.set(move.sx, move.sy, '.');
-
-        for(auto& c : move.captured)
-            next.set(c.first, c.second, '.');
-
-        next.set(move.ex, move.ey, p);
-
-        // Превращение в дамку
-        if(p=='w' && move.ey==0) next.set(move.ex, move.ey, 'W');
-        if(p=='b' && move.ey==7) next.set(move.ex, move.ey, 'B');
-
-        return next;
-    }
-};
-
-
-// загрузка позиции из файла 
-class Parser {
-public:
-    // преобразование координат 
-    static pair<int,int> coordToXY(const string& s) {
-        int x = s[0] - 'A';
-        int y = 8 - (s[1] - '0');
-        return {x, y};
-    }
-
-    static GameState readFile(const string& filename) {
-        ifstream in(filename);
-        if(!in) {
-            cerr « "Error: Cannot open " « filename « endl;
-            exit(1);
-        }
-
-        GameState state;
-        string token;
-        int count;
-
-        in » token » count; // White: N
-        for(int i=0; i<count; ++i) {
-            string pos; in » pos;
-            auto p = coordToXY(pos);
-            state.board.set(p.first, p.second, 'w');
-        }
-
-        in » token » count; // Black: N
-        for(int i=0; i<count; ++i) {
-            string pos; in » pos;
-            bool king = false;
-            if(pos[0]=='M') { king=true; pos=pos.substr(1); }
-            auto p = coordToXY(pos);
-            state.board.set(p.first, p.second, king?'B':'b');
-        }
-
-        state.turn = WHITE;
-        return state;
-    }
-};
-
-// поиск выйгрышной последовательности ходов 
-class Solver {
-public:
-    vector<Move> path;
+struct SolverResult {
     bool solved = false;
-
-    // рекурсивный поиск выйгрышной последовательности 
-    void search(const Board& board, Color turn, int depth, int maxDepth, Color rootSide) {
-        if(solved) return;
-
-        bool whiteWin = board.countBlack() == 0;
-        bool blackWin = board.countWhite() == 0;
-        
-        // Победа по съедению или по блоку (у противника нет ходов)
-        if((rootSide==WHITE && whiteWin) || (rootSide==BLACK && blackWin) ||
-           RulesEngine::getValidMoves(board, turn).empty()) {
-            solved = true;
-            return;
-        }
-
-        if(depth >= maxDepth) return;
-
-        vector<Move> moves = RulesEngine::getValidMoves(board, turn);
-        for(auto& mv : moves) {
-            path.push_back(mv);
-            Board nextBoard = RulesEngine::applyMove(board, mv);
-            search(nextBoard, turn==WHITE?BLACK:WHITE, depth+1, maxDepth, rootSide);
-            if(solved) return;
-            path.pop_back();
-        }
-    }
+    vector<Move> path;
 };
 
+void solve(const Board& board, bool white_turn, int depth, int max_depth, 
+           bool we_are_white, SolverResult& result) {
+    
+    // Если уже нашли решение, выходим
+    if (result.solved) return;
 
+    // Проверка победы
+    bool white_wins = (board.count_black() == 0);
+    bool black_wins = (board.count_white() == 0);
+    
+    // Условие победы для нас:
+    // 1. Мы съели всех врагов
+    // 2. У врагов нет ходов (блокировка)
+    bool enemy_stuck = get_all_moves(board, !white_turn).empty(); 
+    
+    bool we_won = false;
+    if (we_are_white && (white_wins || (!white_turn && enemy_stuck))) we_won = true;
+    if (!we_are_white && (black_wins || (white_turn && enemy_stuck))) we_won = true;
+
+    if (we_won) {
+        result.solved = true;
+        return;
+    }
+
+    // Если глубина исчерпана
+    if (depth >= max_depth) return;
+
+    // Генерируем ходы    vector<Move> moves = get_all_moves(board, white_turn);
+
+    // Перебираем каждый ход
+    for (const auto& mv : moves) {
+        // Применяем ход
+        Board next_board = board.clone();
+        next_board.cells[mv.start_y][mv.start_x] = EMPTY;
+        
+        // Убираем срубленные
+        for (auto cap : mv.captures) {
+            next_board.cells[cap.second][cap.first] = EMPTY;
+        }
+
+        // Ставим шашку на новое место (с учетом превращения в дамку)
+        char p = board.cells[mv.start_y][mv.start_x];
+        if (p == WHITE_PIECE && mv.end_y == 0) p = WHITE_KING;
+        if (p == BLACK_PIECE && mv.end_y == 7) p = BLACK_KING;
+        next_board.cells[mv.end_y][mv.end_x] = p;
+
+        // Добавляем ход в путь
+        result.path.push_back(mv);
+
+        // Рекурсивный вызов
+        solve(next_board, !white_turn, depth + 1, max_depth, we_are_white, result);
+
+        // Если решение найдено внутри рекурсии, выходим
+        if (result.solved) return;
+
+        // Откат (backtracking)
+        result.path.pop_back();
+    }
+}
+
+///////////////////////////////////////////////////////////////
+// ВВОД / ВЫВОД
+///////////////////////////////////////////////////////////////
+
+pair<int, int> parse_coord(string s) {
+    int x = s[0] - 'A';          // 'A' -> 0, 'B' -> 1
+    int y = 8 - (s[1] - '0');    // '8' -> 0, '1' -> 7
+    return {x, y};
+}
+
+string format_coord(int x, int y) {
+    string s;
+    s += (char)('A' + x);
+    s += to_string(8 - y);
+    return s;
+}
 int main() {
-    GameState initial = Parser::readFile("input.txt");
+    // Чтение из файла
+    ifstream in("input.txt");
+    if (!in) {
+        cerr << "Error: input.txt not found!" << endl;
+        return 1;
+    }
 
-    Solver solver;
-    // 6 полуходов = 3 полных хода.
-    solver.search(initial.board, initial.turn, 0, 6, WHITE);
+    Board board;
+    string token;
+    int count;
 
-    ofstream out("output.txt");
-    if(solver.solved) {
-        for(auto& m : solver.path) {
-            out « (char)('A'+m.sx) « (8-m.sy) 
-                « " -> " 
-                « (char)('A'+m.ex) « (8-m.ey) « "\n";
+    // Читаем белых
+    in >> token >> count; // token = "White:"
+    for (int i = 0; i < count; i++) {
+        string pos; in >> pos;
+        auto p = parse_coord(pos);
+        board.cells[p.second][p.first] = WHITE_PIECE;
+    }
+
+    // Читаем черных
+    in >> token >> count; // token = "Black:"
+    for (int i = 0; i < count; i++) {
+        string pos; in >> pos;
+        bool is_king = false;
+        if (pos[0] == 'M') { // Формат ME1 -> дамка на E1
+            is_king = true;
+            pos = pos.substr(1);
+        }
+        auto p = parse_coord(pos);
+        board.cells[p.second][p.first] = is_king ? BLACK_KING : BLACK_PIECE;
+    }
+    in.close();
+
+    // Решение
+    // Ищем выигрыш белых за 6 полуходов (3 полных хода)
+    SolverResult result;
+    solve(board, true, 0, 6, true, result); // true = ход белых, we_are_white = true
+
+    // Запись в файл
+    ofstream out("text.txt");
+    if (result.solved) {
+        for (const auto& mv : result.path) {
+            out << format_coord(mv.start_x, mv.start_y) 
+                << " -> " 
+                << format_coord(mv.end_x, mv.end_y) << endl;
         }
     } else {
-        out « "NO WIN FOUND\n";
-    }
-    out.close();
+        out << "NO WIN FOUND" << endl;
+    }    out.close();
 
     return 0;
 }
-
