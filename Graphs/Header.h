@@ -1,3 +1,5 @@
+РўРµРїРµСЂСЊ РїРѕРґСЂРѕР±РЅРѕ РѕР±СЉСЏСЃРЅРё РїСЂРёРЅС†РёРї РѕРїСЂРµРґРµР»РµРЅРёСЏ РіСЂР°С„Р° Рё РїРѕРґСЂРѕР±РЅРѕ СЂР°СЃРїРёС€Рё РєР°Р¶РґРѕРµ РґРµР№СЃС‚РІРёРµ РІ РєРѕРґРµ 
+
 #pragma once
 #include <iostream>
 #include <set>
@@ -7,85 +9,76 @@ using namespace std;
 
 class Node;
 
-typedef std::set<Node*>::const_iterator node_iterator; //node - базовая единица данных, используется для построения графа
-
+typedef std::set<Node*>::const_iterator node_iterator; //node - Р±Р°Р·РѕРІР°СЏ РµРґРёРЅРёС†Р° РґР°РЅРЅС‹С…, РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ РїРѕСЃС‚СЂРѕРµРЅРёСЏ РіСЂР°С„Р°
 
 class Graph {
-	set<Node*> nodes;
+ set<Node*> nodes;
 
 public:
-	Graph(){}
-	Graph(const char* file_name);
-	~Graph();
+ Graph(){}
+ Graph(const char* file_name);
+ ~Graph();
 
-	void addNode(Node* node);
-	void removeNode(Node* node);
+ void addNode(Node* node);
+ void removeNode(Node* node);
 
-	void addEdge(Node* begin, Node* end); // добавить ребро
-	void removeEdge(Node* begin, Node* end); // удалить ребро
-	
-	Node* findNode(const string& name);
+ void addEdge(Node* begin, Node* end); // РґРѕР±Р°РІРёС‚СЊ СЂРµР±СЂРѕ
+ void removeEdge(Node* begin, Node* end); // СѓРґР°Р»РёС‚СЊ СЂРµР±СЂРѕ
+ 
+ Node* findNode(const string& name);
 
-	node_iterator begin() const; // указатель на первый элемент 
-	node_iterator end() const; // укзатель на последний элемент
+ node_iterator begin() const; // СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РїРµСЂРІС‹Р№ СЌР»РµРјРµРЅС‚ 
+ node_iterator end() const; // СѓРєР·Р°С‚РµР»СЊ РЅР° РїРѕСЃР»РµРґРЅРёР№ СЌР»РµРјРµРЅС‚
 
-	vector<vector<Node*>> connectedComponents();
-	void saveComponents(vector<vector<Node*>>& components);
+ vector<vector<Node*В» connectedComponents();
+ void saveComponents(vector<vector<Node*В»& components, const string& prefix = "");
+ void cleanupOldFiles(const string& pattern); 
 };
-
 
 class Node {
-	string name;
-	set<Node*> neighbours; // множество указателей соседних узлов 
-	void addNeighbour(Node* neighbour);
-	void removeNeighbour(Node* neighbour);
+ string name;
+ set<Node*> neighbours; // РјРЅРѕР¶РµСЃС‚РІРѕ СѓРєР°Р·Р°С‚РµР»РµР№ СЃРѕСЃРµРґРЅРёС… СѓР·Р»РѕРІ 
+ void addNeighbour(Node* neighbour);
+ void removeNeighbour(Node* neighbour);
 
 public:
-	
-	Node(const string& aname);
-	const string& getName() const; // позвращает имя узла 
-	node_iterator nb_begin() const; // указатель на первого соседа узла 
-	node_iterator nb_end() const; // указатель на последнего соседа узла 
-	friend class Graph; // доступ к полям и методам класса Graph 
+ 
+ Node(const string& aname);
+ const string& getName() const; // РїРѕР·РІСЂР°С‰Р°РµС‚ РёРјСЏ СѓР·Р»Р° 
+ node_iterator nb_begin() const; // СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РїРµСЂРІРѕРіРѕ СЃРѕСЃРµРґР° СѓР·Р»Р° 
+ node_iterator nb_end() const; // СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РїРѕСЃР»РµРґРЅРµРіРѕ СЃРѕСЃРµРґР° СѓР·Р»Р° 
+ friend class Graph; // РґРѕСЃС‚СѓРї Рє РїРѕР»СЏРј Рё РјРµС‚РѕРґР°Рј РєР»Р°СЃСЃР° Graph 
 };
-
 
 class BFS {
-	const Graph& graph;
+ const Graph& graph;
 public:
-	BFS(const Graph& agraph) : graph(agraph) {}
-	bool connection(Node* begin, Node* end);
+ BFS(const Graph& agraph) : graph(agraph) {}
+ bool connection(Node* begin, Node* end);
 };
-
 
 class DFS{
-	const Graph & graph;
-	std::set<Node*> visited;
-	bool connected(Node* begin, Node* end, int depth);
+ const Graph & graph;
+ std::set<Node*> visited;
+ bool connected(Node* begin, Node* end, int depth);
 public:
-	DFS(const Graph& agraph) : graph(agraph) {}
-	bool connected(Node* begin, Node* end);
+ DFS(const Graph& agraph) : graph(agraph) {}
+ bool connected(Node* begin, Node* end);
 };
 
-
-struct MarkedNode { // отмеченные узлы
-	Node* node;
-	int mark;
-	Node* prev; // пердыдущий узел
-	MarkedNode(Node* anode = 0, int amark = 0, Node* aprev = 0) :
-		node(anode), mark(amark), prev(aprev) { // передаем значения переменным через указатель 
-	}
+struct MarkedNode { // РѕС‚РјРµС‡РµРЅРЅС‹Рµ СѓР·Р»С‹
+ Node* node;
+ int mark;
+ Node* prev; // РїРµСЂРґС‹РґСѓС‰РёР№ СѓР·РµР»
+ MarkedNode(Node* anode = 0, int amark = 0, Node* aprev = 0) :
+  node(anode), mark(amark), prev(aprev) {} // РїРµСЂРµРґР°РµРј Р·РЅР°С‡РµРЅРёСЏ РїРµСЂРµРјРµРЅРЅС‹Рј С‡РµСЂРµР· СѓРєР°Р·Р°С‚РµР»СЊ 
 };
 
-
-class PriorityQueue { // приоритетная очередь 
-	vector<MarkedNode> nodes;
+class PriorityQueue { // РїСЂРёРѕСЂРёС‚РµС‚РЅР°СЏ РѕС‡РµСЂРµРґСЊ 
+ vector<MarkedNode> nodes;
 
 public:
-	MarkedNode pop();
-	void push(Node* node, int mark, Node* prev);// Добавляет вершину в очередь с приоритетом, запоминая её метку и предыдущую вершину
-	bool empty() const { return nodes.empty(); } // проверка на пустоту очереди
+ MarkedNode pop();
+ void push(Node* node, int mark, Node* prev);// Р”РѕР±Р°РІР»СЏРµС‚ РІРµСЂС€РёРЅСѓ РІ РѕС‡РµСЂРµРґСЊ СЃ РїСЂРёРѕСЂРёС‚РµС‚РѕРј, Р·Р°РїРѕРјРёРЅР°СЏ РµС‘ РјРµС‚РєСѓ Рё РїСЂРµРґС‹РґСѓС‰СѓСЋ РІРµСЂС€РёРЅСѓ
+ bool empty() const { return nodes.empty(); } // РїСЂРѕРІРµСЂРєР° РЅР° РїСѓСЃС‚РѕС‚Сѓ РѕС‡РµСЂРµРґРё
 };
-
-
-
