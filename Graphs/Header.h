@@ -1,4 +1,3 @@
-Теперь подробно объясни принцип определения графа и подробно распиши каждое действие в коде 
 
 #pragma once
 #include <iostream>
@@ -11,6 +10,7 @@ class Node;
 
 typedef std::set<Node*>::const_iterator node_iterator; //node - базовая единица данных, используется для построения графа
 
+// Класс неориентированного граффа 
 class Graph {
  set<Node*> nodes;
 
@@ -35,6 +35,7 @@ public:
  void cleanupOldFiles(const string& pattern); 
 };
 
+// Класс узлов графа 
 class Node {
  string name;
  set<Node*> neighbours; // множество указателей соседних узлов 
@@ -50,6 +51,7 @@ public:
  friend class Graph; // доступ к полям и методам класса Graph 
 };
 
+// Обход графа в ширину 
 class BFS {
  const Graph& graph;
 public:
@@ -57,6 +59,7 @@ public:
  bool connection(Node* begin, Node* end);
 };
 
+// Обход графа в глубину
 class DFS{
  const Graph & graph;
  std::set<Node*> visited;
@@ -66,7 +69,8 @@ public:
  bool connected(Node* begin, Node* end);
 };
 
-struct MarkedNode { // отмеченные узлы
+// Класс для отмеченных узлов
+struct MarkedNode { 
  Node* node;
  int mark;
  Node* prev; // пердыдущий узел
@@ -74,7 +78,8 @@ struct MarkedNode { // отмеченные узлы
   node(anode), mark(amark), prev(aprev) {} // передаем значения переменным через указатель 
 };
 
-class PriorityQueue { // приоритетная очередь 
+ // приоритетная очередь, класс для хранения вершин с приоритетом  
+class PriorityQueue {  
  vector<MarkedNode> nodes;
 
 public:
