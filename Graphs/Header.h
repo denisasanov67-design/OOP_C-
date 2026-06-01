@@ -32,7 +32,7 @@ public:
 
  vector<vector<Node*» connectedComponents();
  void saveComponents(vector<vector<Node*»& components, const string& prefix = "");
- void cleanupOldFiles(const string& pattern); 
+ void cleanupFiles(const string& pattern); 
 };
 
 // Класс узлов графа 
