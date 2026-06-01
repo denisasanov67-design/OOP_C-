@@ -6,9 +6,13 @@ using namespace std;
 int main() {
     setlocale(LC_ALL, "Russian");
 
-    // очистка файлов перед запуском 
+     
     cout « "TestGraph.txt" « endl;
     Graph graph("TestGraph.txt");
+    
+    // очистка файлов перед запуском
+    graph.cleanupFiles("TestGraph_component_*.txt");
+    graph.cleanupFiles("1000_component_*.txt");
     vector<vector<Node*» components = graph.connectedComponents();
 
     graph.saveComponents(components, "TestGraph_");
