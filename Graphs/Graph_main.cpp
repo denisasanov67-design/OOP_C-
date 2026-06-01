@@ -8,12 +8,12 @@ int main() {
 
      
     cout « "TestGraph.txt" « endl;
-    Graph graph("TestGraph.txt");
+    Graph graph("Тест 1: TestGraph.txt");
     
     // очистка файлов перед запуском
     graph.cleanupFiles("TestGraph_component_*.txt");
     graph.cleanupFiles("1000_component_*.txt");
-    vector<vector<Node*» components = graph.connectedComponents();
+    vector<vector<Node*>> components = graph.connectedComponents();
 
     graph.saveComponents(components, "TestGraph_");
 
@@ -26,44 +26,16 @@ int main() {
             « (bfs.connection(n1, n2) ? "связаны" : "не связаны") « endl;
     }
 
-    cout « "Тест 2: 1000.csv" « endl;
+    cout <<"Тест 2: 1000.csv" << endl;
     ifstream check("1000.csv");
         
     Graph graph2("1000.csv");
-    vector<vector<Node*» components2 = graph2.connectedComponents();
+    vector<vector<Node*>> components2 = graph2.connectedComponents();
 
-    graph2.saveComponents(components2, "1000_component_");
+    graph2.saveComponents(components2, "1000_");
     cout « "\nВсе файлы сохранены в текущую директорию: " « endl;
     system("ls -la component_*.txt 2>/dev/null || dir component_*.txt");
-
-
-    cout « "Файл 1000.csv" « endl;
-    for (int i = 1; i <= 2; i++) {
-        string fname = "component_" + to_string(i) + ".txt";
-        ifstream test(fname);
-        if (test.good()) {
-            test.close();
-            // Получаем размер файла
-            test.open(fname, ios::binary | ios::ate);
-            streamsize size = test.tellg();
-            test.close();
-        }
-
-    }
-
-    // Вывод содержимого маленьких файлов для проверки
-    for (int i = 1; i <= 3; i++) {
-        string fname = "component_" + to_string(i) + ".txt";
-        ifstream f(fname);
-        if (f.is_open()) {
-            cout « "\n=== " « fname « " ===" « endl;
-            string line;
-            while (getline(f, line)) {
-                cout « "[" « line « "]" « endl; // [] покажут пробелы
-            }
-            f.close();
-        }
-    }
-
+    
+            
     return 0;
 }
