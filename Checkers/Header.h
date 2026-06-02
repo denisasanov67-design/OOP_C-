@@ -16,20 +16,25 @@ const char BLACK_PIECE = 'b';
 const char BLACK_KING = 'B';
 const char EMPTY = '.';
 
-// Структура для описания хода (поддерживает цепочки)
+
+
+// Структура для описания хода 
 struct Move {
     int start_x, start_y; // Откуда
-    vector<pair<int, int>> path; // Весь путь: start -> клетка1 -> клетка2 -> ... -> end
+    vector<pair<int, int>> path; // Траектория движения 
     vector<pair<int, int>> captures; // Список срубленных шашек в порядке взятия
 
+    //координаты конечной позиции хода 
     int end_x() const { return path.back().first; }
     int end_y() const { return path.back().second; }
 };
 
+
+
 // Класс доски
 class Board {
 private:
-    char cells[8][8];
+    char cells[8][8]; 
 
 public:
     Board();
@@ -43,6 +48,8 @@ public:
     bool is_black(char p) const;
     bool is_enemy(char p1, char p2) const;
 };
+
+
 
 // Класс генератора ходов
 class MoveGenerator {
@@ -61,11 +68,15 @@ public:
     vector<Move> get_all_moves() const;
 };
 
+
+
 // Структура для результата
 struct SolverResult {
     bool solved = false;
     vector<Move> path;
 };
+
+
 
 // Класс решателя
 class Solver {
@@ -95,4 +106,4 @@ public:
     static string format_move(const Move& mv);
 };
 
-#endif // HEADER_H
+#endif 
